@@ -41,6 +41,16 @@ try {
     Write-Host "Installing into: $env:GIT_RULES_TARGET"
     & node (Join-Path $source 'install.cjs')
     $exitCode = $LASTEXITCODE
+    if ($exitCode -eq 0) {
+        $ignoreFile = Join-Path $env:GIT_RULES_TARGET '.gitignore'
+        $ignore = if (Test-Path -LiteralPath $ignoreFile) { [IO.File]::ReadAllText($ignoreFile) } else { '' }
+        if (($ignore -split '\r?\n') -notcontains '/install.bat') {
+            if ($ignore.Length -gt 0 -and -not $ignore.EndsWith("`n")) { $ignore += "`n" }
+            $ignore += "/install.bat`n"
+            [IO.File]::WriteAllText($ignoreFile, $ignore, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Host 'Added /install.bat to .gitignore'
+        }
+    }
 } catch {
     Write-Host "Installation failed: $($_.Exception.Message)" -ForegroundColor Red
 } finally {
